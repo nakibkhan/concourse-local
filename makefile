@@ -7,5 +7,5 @@ dc-up:
 
 dc-down:
 	docker-compose down -v
-	rm -rf keys
-	rm -rf vault
+	sudo rm -rf keys
+	sudo rm -rf vault
