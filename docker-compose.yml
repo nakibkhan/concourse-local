@@ -37,3 +37,40 @@ services:
       - POSTGRES_PASSWORD=concourse_pass
       - POSTGRES_USER=concourse_user
       - PGDATA=/database
+
+  concourse-web:
+    image: concourse/concourse:6.4.0
+    command: web --vault-auth-param role_id:"${ROLE_ID}" --vault-auth-param secret_id:${SECRET_ID}
+    depends_on:
+      - concourse-db
+      - vault-server
+      - vault-cli
+    ports:
+      - 8090:8090
+      - 2222:2222
+    volumes:
+      - "./keys/web:/concourse-keys"
+    environment:
+      - CONCOURSE_POSTGRES_HOST=concourse_db
+      - CONCOURSE_POSTGRES_USER=concourse_user
+      - CONCOURSE_POSTGRES_PASSWORD=concourse_pass
+      - CONCOURSE_POSTGRES_DATABASE=concourse
+      - CONCOURSE_EXTERNAL_URL=http://localhost:8080
+      - CONCOURSE_ADD_LOCAL_USER=nakib:18gs7jWFwm
+      - CONCOURSE_BIND_PORT=8080
+      - CONCOURSE_VAULT_URL=http://vault-server:8200
+      - CONCOUURSE_VAULT_TLS_INSECURE_SKIP_VERIFY="true"
+
+  concourse-worker:
+    image: concourse/concourse:6.4.0
+    command: worker
+    privileged: true
+    depends_on:
+      - concourse-web
+      - concourse-db
+      - vault-cli
+      - vault-server
+    volumes: ["./keys/worker:/concourse/keys"]
+    environment:
+      - CONCOURSE_TSA_HOST=concourse-web:2222
+      - CONCOURSE_GARDEN_NETWORK

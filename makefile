@@ -3,7 +3,9 @@ all=ci-up
 .PHONY: all
 
 dc-up:
-	docker-compose up --build
+	./generate-keys.sh
+	./start.sh
+	echo "Finished $@."
 
 dc-down:
 	docker-compose down -v
