@@ -31,38 +31,46 @@ services:
       - vault-server
 
   concourse-db:
-    image: postgres:9.6
+    image: postgres
     environment:
-      - POSTGRES_DB=concourse
-      - POSTGRES_PASSWORD=concourse_pass
-      - POSTGRES_USER=concourse_user
-      - PGDATA=/database
+      POSTGRES_DB: concourse
+      POSTGRES_USER: concourse_user
+      POSTGRES_PASSWORD: concourse_pass
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
 
   concourse-web:
-    image: concourse/concourse:6.4.0
+    image: concourse/concourse
     command: web --vault-auth-param role_id:"${ROLE_ID}" --vault-auth-param secret_id:${SECRET_ID}
+    links: [concourse-db]
     depends_on:
       - concourse-db
       - vault-server
       - vault-cli
-    ports:
-      - 8090:8090
-      - 2222:2222
-    volumes:
-      - "./keys/web:/concourse-keys"
+    ports: ["8080:8080"]
+    volumes: ["./keys/web:/concourse-keys"]
     environment:
-      - CONCOURSE_POSTGRES_HOST=concourse_db
-      - CONCOURSE_POSTGRES_USER=concourse_user
-      - CONCOURSE_POSTGRES_PASSWORD=concourse_pass
-      - CONCOURSE_POSTGRES_DATABASE=concourse
-      - CONCOURSE_EXTERNAL_URL=http://localhost:8080
-      - CONCOURSE_ADD_LOCAL_USER=nakib:18gs7jWFwm
-      - CONCOURSE_BIND_PORT=8080
-      - CONCOURSE_VAULT_URL=http://vault-server:8200
-      - CONCOUURSE_VAULT_TLS_INSECURE_SKIP_VERIFY="true"
+      CONCOURSE_EXTERNAL_URL: http://localhost:8080
+      CONCOURSE_POSTGRES_HOST: concourse-db
+      CONCOURSE_POSTGRES_USER: concourse_user
+      CONCOURSE_POSTGRES_PASSWORD: concourse_pass
+      CONCOURSE_POSTGRES_DATABASE: concourse
+      CONCOURSE_ADD_LOCAL_USER: nakib:18gs7jWFwm
+      CONCOURSE_MAIN_TEAM_LOCAL_USER: test
+      CONCOURSE_BIND_PORT: 8080
+#      CONCOURSE_VAULT_URL: http://vault-server:8200
+#      CONCOURSE_VAULT_TLS_INSECURE_SKIP_VERIFY: "true"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
 
   concourse-worker:
-    image: concourse/concourse:6.4.0
+    image: concourse/concourse
     command: worker
     privileged: true
     depends_on:
